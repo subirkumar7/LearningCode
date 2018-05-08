@@ -1,0 +1,82 @@
+create table new_book
+(
+id serial,
+title text,
+author text
+);
+
+create or replace function ins_book(p_title varchar, p_author text)
+returns integer as
+$$
+Insert into new_book(title, author) values($1, $2)
+RETURNING id
+$$
+LANGUAGE 'sql' VOLATILE;
+
+select ins_book('and2', 'Subir') as book_id;
+
+
+select * from  new_book
+
+Create or replace function upd_book (log_id integer, p_title text, p_author text )
+RETURNS void AS
+$$
+Update new_book 
+set title=$2,
+author=$3
+where 
+id=$1
+$$
+LANGUAGE 'sql' VOLATILE;
+
+select upd_book(1, 'abc', 'new Book 1 ')
+select upd_book(1, 'pqr', 'new Book 2');
+select upd_book(1, 'xyz', 'new Book 3');
+
+
+##Using return table
+Create or replace function ret_books(p_title varchar)
+returns table (id int , title text, author text) as
+$$
+select id, title, author 
+from new_book
+where title like $1;
+$$
+LANGUAGE 'sql' STABLE;
+
+select ret_books('%a%');
+
+##Out type
+CREATE OR REPLACE FUNCTION ret_books_out(p_title varchar, out p_id int , out title text, out p_author text)
+RETURNS SETOF record as
+$$
+select * from new_book where title like $1;
+$$
+LANGUAGE 'sql' STABLE;
+
+select ret_books_out('%a%');
+
+## using composite type
+Create or replace function ret_books_com(p_title varchar)
+returns setof new_book as
+$$
+select *
+from new_book
+where title like $1;
+$$
+LANGUAGE 'sql' STABLE;
+
+select * from ret_books_com('%a%');
+
+
+Create or replace function read_foodgroup_name_desc(p_id int, out p_name text, out p_description text)
+RETURNS SETOF record as
+$$
+select name, description
+from foodgroups
+where id = $1;
+$$
+LANGUAGE 'sql' STABLE;
+
+select * from foodgroups 
+select * from read_foodgroup_name_desc('1');
